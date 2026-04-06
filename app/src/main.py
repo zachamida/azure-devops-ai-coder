@@ -24,6 +24,9 @@ async def _monitored_consumer():
         await start_queue_consumer()
     except Exception:
         logger.exception("Queue consumer crashed")
+    except BaseException as e:
+        logger.error(f"Queue consumer BaseException: {e}")
+        raise
 
 
 async def lifespan(app: FastAPI):
