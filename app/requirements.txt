@@ -1,0 +1,7 @@
+fastapi==0.109.2
+uvicorn[standard]==0.27.1
+pydantic==2.6.1
+pydantic-settings==2.1.0
+azure-storage-queue==12.9.0
+httpx==0.26.0
+python-json-logger==2.0.7
