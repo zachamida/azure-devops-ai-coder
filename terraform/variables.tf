@@ -75,7 +75,7 @@ variable "webhook_secret" {
 variable "project_repo_map" {
   description = "JSON map of Azure DevOps project names to repository URLs"
   type        = string
-  default     = "{}"
+  default     = "{\"project_name\": \"https://dev.azure.com/org_name/project_name/_git/Test_Project\"}"
 }
 
 variable "log_analytics_workspace_name" {
