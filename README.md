@@ -92,7 +92,7 @@ Git Push ──► Pull Request ──► Work Item Updated
 ### 1. Clone & Configure
 
 ```bash
-git clone https://github.com/your-username/azure-devops-ai-coder.git
+git clone https://github.com/zachamida/azure-devops-ai-coder.git
 cd azure-devops-ai-coder
 
 # Copy and fill in your values
@@ -156,7 +156,7 @@ terraform apply \
 |----------|-------------|----------|---------|
 | `AZURE_OPENAI_ENDPOINT` | Azure OpenAI endpoint URL | Yes | — |
 | `AZURE_OPENAI_KEY` | Azure OpenAI API key | Yes | — |
-| `AZURE_OPENAI_DEPLOYMENT` | Model deployment name | No | `gpt-4o` |
+| `AZURE_OPENAI_DEPLOYMENT` | Model deployment name | No | `gpt-4o-mini` |
 | `AZURE_OPENAI_API_VERSION` | Azure OpenAI API version (hardcoded) | — | `2024-02-01` |
 | `AZURE_DEVOPS_PAT` | Azure DevOps Personal Access Token | Yes | — |
 | `AZURE_DEVOPS_ORG` | Azure DevOps organization name | Yes | — |
