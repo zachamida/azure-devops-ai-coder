@@ -12,8 +12,10 @@ flowchart TD
         B["🔗 Webhook Endpoint\n/api/webhook"]
         B -->|HMAC Verify| C{"Signature\nValid?"}
         C -->|No| D["❌ 401 Rejected"]
-        C -->|Yes| E{"Content\nChanged?"}
-        E -->|Duplicate| F["⏭️ Skipped"]
+        C -->|Yes| T{"Has\nai_item tag?"}
+        T -->|No| U["⏭️ Skipped\n(No Tag)"]
+        T -->|Yes| E{"Content\nChanged?"}
+        E -->|Duplicate| F["⏭️ Skipped\n(Duplicate)"]
         E -->|New/Updated| G["📤 Enqueue Task"]
 
         G --> H["📥 Queue Consumer\n(Background Worker)"]
@@ -155,6 +157,7 @@ terraform apply \
 | `AZURE_OPENAI_ENDPOINT` | Azure OpenAI endpoint URL | Yes | — |
 | `AZURE_OPENAI_KEY` | Azure OpenAI API key | Yes | — |
 | `AZURE_OPENAI_DEPLOYMENT` | Model deployment name | No | `gpt-4o` |
+| `AZURE_OPENAI_API_VERSION` | Azure OpenAI API version (hardcoded) | — | `2024-02-01` |
 | `AZURE_DEVOPS_PAT` | Azure DevOps Personal Access Token | Yes | — |
 | `AZURE_DEVOPS_ORG` | Azure DevOps organization name | Yes | — |
 | `STORAGE_CONNECTION_STRING` | Azure Storage connection string | Yes | — |
@@ -288,6 +291,7 @@ az storage message peek --queue-name ai-coder-tasks-dlq --account-name <storage-
 | Crush not making changes | Check Azure OpenAI credentials and model deployment name |
 | Task stuck in DLQ | Check container logs for error details |
 | Duplicate tasks | Content-aware dedup uses a 5-min window; wait or restart container |
+| Webhook not delivering | Azure DevOps puts hooks **on probation** after repeated errors (e.g. 400/500). Delete the subscription under **Project Settings → Service Hooks** and recreate it |
 
 ## License
 
