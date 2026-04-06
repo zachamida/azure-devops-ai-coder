@@ -76,17 +76,33 @@ async def receive_webhook(request: Request):
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid JSON payload")
 
+    logger.info(f"Webhook payload top-level keys: {list(payload.keys())}")
+
     resource = payload.get("resource", {})
     fields = resource.get("fields", {})
+    revision = resource.get("revision", {})
+    revision_fields = revision.get("fields", {})
 
-    tags = fields.get("System.Tags", "")
+    # Azure DevOps "work item updated" events send only *changed* fields in
+    # resource.fields. The full snapshot (including Tags, Title, etc.) lives
+    # in resource.revision.fields. Merge both, preferring resource.fields
+    # for any key that was just updated.
+    merged_fields = {**revision_fields, **fields}
+
+    logger.info(
+        f"Webhook work item {resource.get('id')}: "
+        f"changed_fields={list(fields.keys())}, "
+        f"revision_fields={list(revision_fields.keys())[:10]}..."
+    )
+
+    tags = merged_fields.get("System.Tags", "")
     if "ai_item" not in tags:
         logger.info(f"Skipped: No ai_item tag on work item {resource.get('id')}")
         return {"status": "skipped", "message": "No ai_item tag"}
 
     work_item_id = str(resource.get("id"))
-    title = fields.get("System.Title", "")
-    description = fields.get("System.Description", "")
+    title = merged_fields.get("System.Title", "")
+    description = merged_fields.get("System.Description", "")
 
     if _is_duplicate(work_item_id, title, description):
         logger.info(f"Skipped duplicate webhook for work item {work_item_id}")
@@ -95,6 +111,16 @@ async def receive_webhook(request: Request):
     project_ref = payload.get("projectReference", {})
     project_name = project_ref.get("name", "")
 
+    # Azure DevOps may also send project info under resourceContainers
+    if not project_name:
+        containers = payload.get("resourceContainers", {})
+        project_container = containers.get("project", {})
+        # The project ID is available but not the name directly;
+        # fall back to System.TeamProject from the work item fields
+        project_name = merged_fields.get("System.TeamProject", "")
+
+    logger.info(f"Resolved project name: '{project_name}'")
+
     repo_url = settings.project_to_repo.get(project_name)
     if not repo_url:
         raise HTTPException(
@@ -102,12 +128,16 @@ async def receive_webhook(request: Request):
             detail=f"No repository mapping configured for project: {project_name}"
         )
 
+    assigned = merged_fields.get("System.AssignedTo", "")
+    if isinstance(assigned, dict):
+        assigned = assigned.get("displayName", "")
+
     task = {
         "workItemId": work_item_id,
         "title": title,
         "description": description,
         "projectName": project_name,
-        "assignedTo": fields.get("System.AssignedTo", {}).get("displayName", ""),
+        "assignedTo": assigned,
         "repoUrl": repo_url,
         "retryCount": 0,
     }
